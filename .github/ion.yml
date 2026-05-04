@@ -1,0 +1,39 @@
+name: ION datadownload
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read, write
+
+jobs:
+  check-matching:
+    runs-on: ubuntu-slim
+      steps:
+    - uses: actions/download-artifact@v8
+
+    - name: 
+  import-file:
+    runs-on: ubuntu-slim
+        steps:
+      - uses: actions/upload-artifact@v7
+
+      - name: Compare the expected and actual dist/ directories
+        run: |
+          if [ "$(git diff --ignore-space-at-eol dist/ | wc -l)" -gt "0" ]; then
+            echo "Detected uncommitted changes after build.  See status below:"
+            git diff
+            exit 1
+          fi
+        id: diff
+      - name: Download raw file via curl
+        run: curl -L https://webapps.regionofwaterloo.ca/api/grt-routes/api/staticfeeds/2 -o ./GTFS.zip
+        
+      - name: Check if file has identical hash
+        run: |
+          if (diff <(sha256sum GTFS.zip) <(sha256sum GTFS.zip)) != ""
+            exit 1
+          fi
